@@ -1,10 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy import MetaData, Text
 
-# Initialize SQLAlchemy first
-db = SQLAlchemy()
-
-# Metadata convention
+# Initialize SQLAlchemy with metadata convention for naming constraints
 convention = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -13,42 +12,47 @@ convention = {
     "pk": "pk_%(table_name)s"
 }
 
-# Define the metadata after db initialization
-metadata = db.MetaData(naming_convention=convention)
+metadata = MetaData(naming_convention=convention)
 
-# Now initialize SQLAlchemy with the metadata
+# Initialize SQLAlchemy with the custom metadata
 db = SQLAlchemy(metadata=metadata)
 
-
+# Define the Note model
 class Note(db.Model, SerializerMixin):
     __tablename__ = 'note'
 
+    # Columns
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     module = db.Column(db.String(50), nullable=False)
     category = db.Column(db.String(50), nullable=True)
+    subtopics = db.Column(JSON, nullable=True, default=[])  # JSON for storing structured data (e.g., list of subtopics)
 
-    # Bidirectional relationship with Comment
+    # Relationships
     comments = db.relationship(
         'Comment',
         back_populates='note',
-        lazy=True,
+        lazy='dynamic',  # Use 'dynamic' for query building
         cascade="all, delete-orphan"
     )
 
-    serialize_only = ('id', 'title', 'content', 'module', 'category', 'comments')
+    # Serialization settings
+    serialize_only = ('id', 'title', 'content', 'module', 'category', 'subtopics', 'comments')
 
 
+# Define the Comment model
 class Comment(db.Model, SerializerMixin):
     __tablename__ = 'comments'
 
+    # Columns
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
-    note_id = db.Column(db.Integer, db.ForeignKey('note.id'), nullable=False)
+    note_id = db.Column(db.Integer, db.ForeignKey('note.id', ondelete="CASCADE"), nullable=False)  # Add ondelete for cascade
     timestamp = db.Column(db.DateTime, default=db.func.now(), nullable=False)
 
-    # Reference back to Note
+    # Relationships
     note = db.relationship('Note', back_populates='comments')
 
+    # Serialization settings
     serialize_only = ('id', 'content', 'timestamp', 'note_id')

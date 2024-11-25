@@ -1,16 +1,16 @@
-""" update all models
+"""update subtopics section
 
-Revision ID: 151b95ed142d
+Revision ID: 05194a185ce5
 Revises: 
-Create Date: 2024-11-20 17:20:34.266163
+Create Date: 2024-11-21 13:17:06.350206
 
 """
 from alembic import op
 import sqlalchemy as sa
-
-
+from sqlalchemy.dialects import postgresql
+from sqlalchemy import Text
 # revision identifiers, used by Alembic.
-revision = '151b95ed142d'
+revision = '05194a185ce5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,6 +24,7 @@ def upgrade():
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('module', sa.String(length=50), nullable=False),
     sa.Column('category', sa.String(length=50), nullable=True),
+    sa.Column('subtopics', postgresql.JSON(astext_type=Text()), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_note'))
     )
     op.create_table('comments',
@@ -31,7 +32,7 @@ def upgrade():
     sa.Column('content', sa.Text(), nullable=False),
     sa.Column('note_id', sa.Integer(), nullable=False),
     sa.Column('timestamp', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['note_id'], ['note.id'], name=op.f('fk_comments_note_id_note')),
+    sa.ForeignKeyConstraint(['note_id'], ['note.id'], name=op.f('fk_comments_note_id_note'), ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_comments'))
     )
     # ### end Alembic commands ###

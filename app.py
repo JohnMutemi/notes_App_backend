@@ -25,7 +25,7 @@ ALLOWED_MODULES = ["HTML", "CSS", "JavaScript", "Python", "Flask", "React"]
 class NotesResource(Resource):
     def post(self, module):
         """Create a new note with a specified module"""
-        print(f"POST request received for module: {module}")  # Debugging print statement
+        print(f"POST request received for module: {module}")
 
         # Ensure that the module is in the allowed modules list
         if module not in ALLOWED_MODULES:
@@ -37,43 +37,90 @@ class NotesResource(Resource):
         # Handle both JSON and FormData (multipart/form-data)
         if request.is_json:
             data = request.get_json()
-            print(f"Received JSON data: {data}")  # Debugging print statement
+            print(f"Received JSON data: {data}")
         elif request.form:
             data = request.form.to_dict()
-            print(f"Received form data: {data}")  # Debugging print statement
+            print(f"Received form data: {data}")
         else:
-            print("Invalid data format. Expected JSON or FormData.")  # Debugging print statement
+            print("Invalid data format. Expected JSON or FormData.")
             return {'message': 'Invalid data format. Expected JSON or FormData.'}, 400
 
         # Ensure only title and content are required
         title = data.get('title')
         content = data.get('content')
+        subtopics = data.get('subtopics')
 
-        if not title or not content:
-            print("Missing title or content.")  # Debugging print statement
-            return {'message': 'Title and content are required.'}, 400
+        if not title or not content or not subtopics:
+            print("Missing title or content or subtopic.")
+            return {'message': 'Title, Subtopic and content are required.'}, 400
 
         # Create new note with predefined module value from the URL parameter
-        note = Note(title=title, content=content, module=module)
-        print(f"New note created with title: {title}, content: {content}, module: {module}")  # Debugging print statement
+        note = Note(title=title, subtopics=subtopics, content=content, module=module)
+        print(f"New note created with title: {title}, subtopics:{subtopics},content: {content}, module: {module}")
 
         db.session.add(note)
         db.session.commit()
-        print(f"Note with ID {note.id} saved to the database.")  # Debugging print statement
+        print(f"Note with ID {note.id} saved to the database.")
 
         return note.to_dict(), 201
 
     def get(self, module):
         """Retrieve all notes for a specific module"""
-        print(f"GET request received for module: {module}")  # Debugging print statement
+        print(f"GET request received for module: {module}")
 
         if module not in ALLOWED_MODULES:
             print(f"Invalid module: {module}. Allowed modules are {ALLOWED_MODULES}.")
             return {'message': f'Invalid module. Allowed modules are {ALLOWED_MODULES}.'}, 400
         
         notes = Note.query.filter_by(module=module).all()
-        print(f"Found {len(notes)} notes for module: {module}")  # Debugging print statement
+        print(f"Found {len(notes)} notes for module: {module}")
         return [note.to_dict() for note in notes], 200
+
+    def patch(self, module, note_id):
+        """Update an existing note"""
+        print(f"PATCH request received for module: {module}, note_id: {note_id}")
+
+        if module not in ALLOWED_MODULES:
+            print(f"Invalid module: {module}. Allowed modules are {ALLOWED_MODULES}.")
+            return {'message': f'Invalid module. Allowed modules are {ALLOWED_MODULES}.'}, 400
+
+        data = None
+
+        # Handle both JSON and FormData (multipart/form-data)
+        if request.is_json:
+            data = request.get_json()
+            print(f"Received JSON data: {data}")
+        elif request.form:
+            data = request.form.to_dict()
+            print(f"Received form data: {data}")
+        else:
+            print("Invalid data format. Expected JSON or FormData.")
+            return {'message': 'Invalid data format. Expected JSON or FormData.'}, 400
+
+        # Fetch the note by ID
+        note = Note.query.get(note_id)
+        if not note:
+            print(f"Note with ID {note_id} not found.")
+            return {'message': 'Note not found.'}, 404
+
+        # Update the fields if they are present in the request
+        title = data.get('title')
+        content = data.get('content')
+        subtopics = data.get('subtopics')
+
+        if title:
+            note.title = title
+        if content:
+            note.content = content
+        if subtopics:
+            note.subtopics = subtopics
+
+        print(f"Updating note with ID {note_id}: title={note.title}, subtopics={note.subtopics}, content={note.content}")
+        db.session.commit()
+        print(f"Note with ID {note_id} updated successfully.")
+
+        return note.to_dict(), 200
+
 
 class SingleNoteResource(Resource):
     def get(self, note_id):
@@ -104,6 +151,7 @@ class SingleNoteResource(Resource):
 
         # Update only title,and content (module is predefined, category is not needed)
         note.title = data.get('title', note.title)
+        note.subtopics = data.get('subtopics', note.subtopics)
         note.content = data.get('content', note.content)
 
 
@@ -174,7 +222,7 @@ class CommentResource(Resource):
 
 # Add the new resource to the API
 api.add_resource(CommentResource, '/notes/<int:note_id>/comments')
-api.add_resource(NotesResource, '/notes/<string:module>')  # For retrieving notes by module and creating a note
+api.add_resource(NotesResource, '/notes/<string:module>', '/notes/<string:module>/<int:note_id>')  # Handle notes by module and note_id
 api.add_resource(SingleNoteResource, '/notes/<int:note_id>')  # For operations on a single note by ID
 
 if __name__ == '__main__':
