@@ -9,10 +9,18 @@ import os
 # Initialize the Flask application
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.json.compact = False
+CORS(app, resources={r"/*": {
+    "origins": "*",  # Allows all origins
+    "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    "allow_headers": "*"
+}})
 
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000", "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], "allow_headers": "*"}})
 
 # Initialize the database and migration tool
+from models import db, Note, Comment
 db.init_app(app)
 migrate = Migrate(app, db)
 
