@@ -1,0 +1,15 @@
+# Ignore the Pipenv virtual environment directory
+.venv/
+
+# Ignore the Pipfile.lock if you don't want it tracked (Optional)
+Pipfile.lock
+
+# Ignore the virtual environment on Windows
+pipenv/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+
+# Ignore environment files like .env
+.env
