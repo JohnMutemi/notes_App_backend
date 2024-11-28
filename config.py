@@ -12,9 +12,9 @@ class Config:
 
     if FLASK_ENV == 'production':
         # Use production database URI from .env
-        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI')
+        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     else:
         # Use SQLite as a default for development
-        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI', 'sqlite:///notes.db')
+        SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///notes.db')
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
